@@ -23,7 +23,7 @@ def dados(email: str = Query(...)):
         return {"dados": []}
     if "email" in df.columns:
         df = df[df["email"] == email]
-    return df.to_dict(orient="records")
+    return df.fillna("").to_dict(orient="records")
 
 if __name__ == "__main__":
     import uvicorn
