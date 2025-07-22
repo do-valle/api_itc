@@ -18,6 +18,7 @@ sheets = {
     "classificacao": "1229723085",
     "convenios_especialidades": "1626985134",
     "competencia_validacao": "697188529",
+    "user": "0",  # ← df_user correto
     "Respostas ao formulário 1": "221347943"
 }
 
@@ -109,6 +110,29 @@ def gerar_df_atendimentos():
         df_atendimentos = df_atendimentos.drop(
             columns=['convênio', 'evento', 'valor fixo'], errors='ignore'
         )
+
+        # === MERGE COM df_user PARA TRAZER COLUNA DE EMAIL ===
+        df_user = dataframes["df_user"]
+        df_user["Nome Tasy"] = df_user["Nome Tasy"].astype(str).str.strip()
+        df_user["Nome Geclin"] = df_user["Nome Geclin"].astype(str).str.strip()
+        df_user["E-mail"] = df_user["E-mail"].astype(str).str.strip()
+        df_atendimentos["Profissional"] = df_atendimentos["Profissional"].astype(str).str.strip()
+
+        merge_tasy = df_atendimentos.merge(
+            df_user[["Nome Tasy", "E-mail"]],
+            left_on="Profissional",
+            right_on="Nome Tasy",
+            how="left"
+        ).rename(columns={"E-mail": "email_tasy"})
+
+        merge_geclin = df_atendimentos.merge(
+            df_user[["Nome Geclin", "E-mail"]],
+            left_on="Profissional",
+            right_on="Nome Geclin",
+            how="left"
+        ).rename(columns={"E-mail": "email_geclin"})
+
+        df_atendimentos["email"] = merge_tasy["email_tasy"].combine_first(merge_geclin["email_geclin"])
 
         return df_atendimentos
 
