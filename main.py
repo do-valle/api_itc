@@ -27,8 +27,6 @@ def dados(email: str = Query(...)):
         df = df[df["email"] == email]
     return df.fillna("").to_dict(orient="records")
 
-from fastapi import Query
-
 @app.get("/baixar-relacao")
 def baixar_relacao(email: str = Query(...)):
     df = gerar_df_atendimentos()
@@ -48,7 +46,7 @@ def baixar_relacao(email: str = Query(...)):
 
     return FileResponse(
         path=caminho_arquivo,
-        # filename=nome_arquivo,
+        filename=nome_arquivo,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
