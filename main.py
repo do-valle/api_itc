@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from gerar_df import gerar_df_atendimentos
+import os
 
 app = FastAPI()
 
@@ -24,6 +26,26 @@ def dados(email: str = Query(...)):
     if "email" in df.columns:
         df = df[df["email"] == email]
     return df.fillna("").to_dict(orient="records")
+
+@app.get("/baixar-relacao")
+def baixar_relacao():
+    df = gerar_df_atendimentos()
+    if df.empty:
+        return {"erro": "Nenhum dado disponível"}
+
+    # Caminho temporário
+    nome_arquivo = "Relacao_de_Atendimentos.xlsx"
+    caminho_arquivo = f"/tmp/{nome_arquivo}"
+
+    # Salvar o DataFrame como Excel
+    df.to_excel(caminho_arquivo, index=False, engine='openpyxl')
+
+    # Retornar o arquivo como download
+    return FileResponse(
+        path=caminho_arquivo,
+        # filename=nome_arquivo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 if __name__ == "__main__":
     import uvicorn
