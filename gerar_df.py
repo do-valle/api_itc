@@ -39,6 +39,8 @@ def gerar_df_atendimentos():
             df_geclin["Data Atendimento"], dayfirst=True, errors="coerce"
         ).dt.normalize()
         df_geclin['Nota Clínica'] = None
+        # Remover tudo a partir de " (" na coluna 'Convênio'
+        df_geclin['Convênio'] = df_geclin['Convênio'].str.split(' \(').str[0]
         df_geclin['base'] = 'GECLIN'
         df_geclin['Procedimento'] = df_geclin['Procedimento'].str.split(" - ").str[0]
         df_geclin['Procedimento'] = pd.to_numeric(
@@ -134,23 +136,41 @@ def gerar_df_atendimentos():
 
         df_atendimentos["email"] = merge_tasy["email_tasy"].combine_first(merge_geclin["email_geclin"])
 
-        # # Verificar se a coluna 'email' existe e seus valores antes do groupby
-        # print("Colunas em df_atendimentos:", df_atendimentos.columns.tolist())
-        # print("Amostra de valores em 'email':", df_atendimentos['email'].head().tolist())
-        # print("Contagem de valores nulos em 'email':", df_atendimentos['email'].isna().sum())
-
-        # Substituir valores nulos em 'email' por "E-mail não Identificado"
-        df_atendimentos['email'] = df_atendimentos['email'].fillna("E-mail não Identificado")
-
-        # Definir as colunas para o groupby
-        colunas_grupo = [
-            'Data Atendimento', 'Unidade', 'Paciente', 'Convênio', 'Profissional',
-            'Especialidade', 'Procedimento', 'Status',
-            'Nota Clínica', 'base', 'email'
+        # Lista de colunas a concatenar
+        colunas_concatenar = [
+            "Data Atendimento", "Unidade", "Paciente", "Convênio", "Profissional",
+            "Especialidade", "Procedimento", "Valor Bruto", "Valor Líquido", "Status",
+            "Nota Clínica", "base", "email"
         ]
 
-        # Aplicar o groupby e somar 'Valor à Receber'
-        df_atendimentos = df_atendimentos.groupby(colunas_grupo, as_index=False)['Valor à Receber'].sum()
+        # Lista de todas as colunas, exceto a que será somada
+        colunas_manter = df_atendimentos.columns.difference(["Valor à Receber"])
+        
+        df_atendimentos["chave_concatenada"] = df_atendimentos[colunas_concatenar].astype(str).agg(" | ".join, axis=1)
+        
+        # Agrupando com dict comprehension
+        df_atendimentos = df_atendimentos.groupby("chave_concatenada", as_index=False).agg(
+            {**{col: "first" for col in colunas_manter}, "Valor à Receber": "sum"}
+        )
+
+        # Lista com as colunas na ordem desejada
+        colunas_desejadas = [
+            'Data Atendimento',
+            'Paciente',
+            'Convênio',
+            'Especialidade',
+            'Procedimento',
+            'Nota Clínica',
+            'Unidade',
+            'Status',
+            'base',
+            'Profissional',
+            'email',
+            'Valor à Receber'
+        ]
+        
+        # Selecionar apenas as colunas desejadas
+        df_atendimentos = df_atendimentos[colunas_desejadas]
 
         return df_atendimentos
 
