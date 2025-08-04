@@ -138,7 +138,7 @@ def gerar_df_atendimentos():
         colunas_grupo = [
             'Data Atendimento', 'Unidade', 'Paciente', 'Convênio', 'Profissional',
             'Especialidade', 'Procedimento', 'Status',
-            'Nota Clínica', 'base'
+            'Nota Clínica', 'base', 'email'
         ]
 
         # Aplicar o groupby e somar 'Valor à Receber'
