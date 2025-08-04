@@ -50,7 +50,7 @@ def gerar_df_atendimentos():
         df = dataframes["df_tasy"]
         df['Convênio'] = 'UNIMED'
         df = df[df['Status'] == "Executada"]
-        df_tasy = df[[ 
+        df_tasy = df[[
             'Data Evolução', 'Classificação', 'Paciente',
             'Convênio', 'Profissional Evolução', 'Especialidade',
             'Cód Procedimento', 'Status', 'Nota Clínica'
@@ -111,26 +111,32 @@ def gerar_df_atendimentos():
             columns=['convênio', 'evento', 'valor fixo'], errors='ignore'
         )
 
-        # === Map para E-mails ===
+        # === MERGE COM df_user PARA TRAZER COLUNA DE EMAIL ===
         df_user = dataframes["df_user"]
         df_user["Nome Tasy"] = df_user["Nome Tasy"].astype(str).str.strip()
         df_user["Nome Geclin"] = df_user["Nome Geclin"].astype(str).str.strip()
         df_user["E-mail"] = df_user["E-mail"].astype(str).str.strip()
         df_atendimentos["Profissional"] = df_atendimentos["Profissional"].astype(str).str.strip()
 
-        # Map para Tasy
-        map_tasy = df_user.set_index("Nome Tasy")["E-mail"].to_dict()
-        df_atendimentos["email_tasy"] = df_atendimentos["Profissional"].map(map_tasy)
+        merge_tasy = df_atendimentos.merge(
+            df_user[["Nome Tasy", "E-mail"]],
+            left_on="Profissional",
+            right_on="Nome Tasy",
+            how="left"
+        ).rename(columns={"E-mail": "email_tasy"})
 
-        # Map para Geclin
-        map_geclin = df_user.set_index("Nome Geclin")["E-mail"].to_dict()
-        df_atendimentos["email_geclin"] = df_atendimentos["Profissional"].map(map_geclin)
+        merge_geclin = df_atendimentos.merge(
+            df_user[["Nome Geclin", "E-mail"]],
+            left_on="Profissional",
+            right_on="Nome Geclin",
+            how="left"
+        ).rename(columns={"E-mail": "email_geclin"})
 
-        # Combina os dois
-        df_atendimentos["email"] = df_atendimentos["email_tasy"].combine_first(df_atendimentos["email_geclin"])
+        df_atendimentos["email"] = merge_tasy["email_tasy"].combine_first(merge_geclin["email_geclin"])
 
-        # Remove colunas temporárias
-        df_atendimentos.drop(columns=["email_tasy", "email_geclin"], inplace=True)
+        # Agrupar por todas as colunas exceto "Valor à Receber" e somar essa
+        colunas_grupo = [col for col in df_atendimentos.columns if col != "Valor à Receber"]
+        df_atendimentos = df_atendimentos.groupby(colunas_grupo, as_index=False)["Valor à Receber"].sum()
 
         return df_atendimentos
 
