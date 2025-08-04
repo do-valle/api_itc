@@ -134,6 +134,14 @@ def gerar_df_atendimentos():
 
         df_atendimentos["email"] = merge_tasy["email_tasy"].combine_first(merge_geclin["email_geclin"])
 
+        # # Verificar se a coluna 'email' existe e seus valores antes do groupby
+        # print("Colunas em df_atendimentos:", df_atendimentos.columns.tolist())
+        # print("Amostra de valores em 'email':", df_atendimentos['email'].head().tolist())
+        # print("Contagem de valores nulos em 'email':", df_atendimentos['email'].isna().sum())
+
+        # Substituir valores nulos em 'email' por "E-mail não Identificado"
+        df_atendimentos['email'] = df_atendimentos['email'].fillna("E-mail não Identificado")
+
         # Definir as colunas para o groupby
         colunas_grupo = [
             'Data Atendimento', 'Unidade', 'Paciente', 'Convênio', 'Profissional',
