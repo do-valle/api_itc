@@ -134,9 +134,15 @@ def gerar_df_atendimentos():
 
         df_atendimentos["email"] = merge_tasy["email_tasy"].combine_first(merge_geclin["email_geclin"])
 
-        # Agrupar por todas as colunas exceto "Valor à Receber" e somar essa
-        colunas_grupo = [col for col in df_atendimentos.columns if col != "Valor à Receber"]
-        df_atendimentos = df_atendimentos.groupby(colunas_grupo, as_index=False)["Valor à Receber"].sum()
+        # Definir as colunas para o groupby
+        colunas_grupo = [
+            'Data Atendimento', 'Unidade', 'Paciente', 'Convênio', 'Profissional',
+            'Especialidade', 'Procedimento', 'Status',
+            'Nota Clínica', 'base'
+        ]
+
+        # Aplicar o groupby e somar 'Valor à Receber'
+        df_atendimentos = df_atendimentos.groupby(colunas_grupo, as_index=False)['Valor à Receber'].sum()
 
         return df_atendimentos
 
